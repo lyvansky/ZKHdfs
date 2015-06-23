@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/antlr-2.7.6.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/checkstyle-5.0.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/commons-beanutils-core-1.7.0.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/commons-cli-1.0.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/commons-collections-2.0.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/commons-lang-1.0.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/commons-logging-1.0.3.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/google-collections-0.9.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/jline-0.9.94.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/junit-4.8.1.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/log4j-1.2.16.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/mockito-all-1.8.2.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/netty-3.7.0.Final.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/slf4j-api-1.6.1.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/slf4j-log4j12-1.6.1.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/zookeeper-3.4.6.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/zookeeper-3.4.6-sources.jar"/>
+	<classpathentry kind="lib" path="/home/mylib/zookeeper/zookeeper-3.4.6-tests.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
