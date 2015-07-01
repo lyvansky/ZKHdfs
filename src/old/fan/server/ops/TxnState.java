@@ -1,4 +1,4 @@
-package fan.server.ops;
+package old.fan.server.ops;
 
 public enum TxnState {
 	
@@ -7,8 +7,6 @@ public enum TxnState {
 	EXEC_DELETE("EXEC_DELETE"),
 	
 	EXEC_RENAME("EXEC_RENAME"),
-	
-	DO_TXN("DO_TXN"),
 	
 	RELEASE_LOCK("RELEASE_LOCK");
 	
