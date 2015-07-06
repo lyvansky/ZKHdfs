@@ -122,7 +122,8 @@ public class NamenodeOps {
 							replyFile = curTxnFile + Cfg.PATH_SEPARATOR
 									+ replyPrefix + nnId;
 							System.out.println("curTxnFile:" + curTxnFile);
-							List<String> list = zk.getChildren(curTxnFile, false);
+							List<String> list = zk.getChildren(curTxnFile,
+									false);
 							String reply = replyPrefix + nnId;
 							tmp = new String(
 									zk.getData(curTxnFile, false, null))
@@ -130,10 +131,12 @@ public class NamenodeOps {
 							state = TxnState.valueOf(tmp[0]);
 							switch (state) {
 							case PREPARE_LOCK:
-								System.out.println("PrepareLock:" + (!list.contains(reply)));
 								if (!list.contains(reply)) {
-									Cfg.killTime("Namenode", "createReplyFile", false);
+									// Cfg.killTime("Namenode",
+									// "Before createReplyFile", false);
 									createReplyFile(replyFile);
+									// Cfg.killTime("Namenode",
+									// "After createReplyFile", true);
 									zk.getData(curTxnFile, wh, null);
 								}
 								mutex.wait();
@@ -144,12 +147,11 @@ public class NamenodeOps {
 								mutex.wait();
 								break;
 							case RELEASE_LOCK:
-								System.out.println("Release_Lock:" + (list.contains(reply)));
-								
-								Cfg.killTime("Namenode", "DeleteReplyFile", false);
-								System.out.println("Delete ReplyFile....");
-
 								if (list.contains(reply)) {
+									// Cfg.killTime("Namenode",
+									// "DeleteReplyFile", false);
+
+									System.out.println("Delete ReplyFile....");
 									deleteReplyFile(replyFile);
 									zk.getData(curTxnFile, wh, null);
 								}
@@ -235,13 +237,52 @@ public class NamenodeOps {
 	}
 
 	private void process(String ops) {
-		System.out.println("Do Operations....");
-		try {
-			TimeUnit.MILLISECONDS.sleep(3000);
-		} catch (InterruptedException e) {
-			// TODO �Զ���ɵ� catch ��
-			e.printStackTrace();
+		TxnType tx;
+		if (ops.startsWith(Cfg.TXN_FLAG)) {// 001DEL$src1$src2
+			System.out.println("subString:"
+					+ ops.substring(Cfg.TXN_FLAG.length(), ops.length()));
+			String tmp = ops.substring(Cfg.TXN_FLAG.length(), ops.length());
+			String array[] = tmp.split(Cfg.OPS_PARAMETER_SEPARATOR);
+			for (int i = 0; i < array.length; i++) {
+				System.out.println("len:" + array.length + ", array:"
+						+ array[i]);
+			}
+			String doTxnFile = null;
+			boolean done = false;
+			while (!done) {
+				try {
+					doTxnFile = co.getCurrentWatcherPathForCoordinator(zk);
+					done = true;
+				} catch (KeeperException | InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			// tmp[0] is operation type, tmp[1,...] are operation parameter
+			// TxnType type = new TxnType(tmp[0].toLowerCase());
+			System.out
+					.println("Here!   case:"
+							+ array[0].toLowerCase().split(
+									Cfg.OPS_PARAMETER_SEPARATOR)[0]);
+			switch (array[0].trim().toLowerCase()
+					.split(Cfg.OPS_PARAMETER_SEPARATOR)[0]) {
+			case "del":
+				System.out.println("Here!");
+				co.doDelete(array);
+				break;
+			case "mv":
+				co.doRename(array, zk, doTxnFile);
+				break;
+			}
+		} else {
+			System.out.println("Do Operations....");
+			try {
+				TimeUnit.MILLISECONDS.sleep(3000);
+			} catch (InterruptedException e) {
+				// TODO �Զ���ɵ� catch ��
+				e.printStackTrace();
+			}
+			System.out.println("Non-transaction Operations have finished!");
 		}
-		System.out.println("Non-transaction Operations have finished!");
 	}
 }

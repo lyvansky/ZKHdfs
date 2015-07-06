@@ -6,10 +6,12 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.hadoop.hdfs.server.namenode.NameNode;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -25,6 +27,8 @@ public class CoordinatorOps {
 	private final String stateOpsSeparator = Cfg.STATE_OPS_SEPARATOR;
 	private final String pathSeparator = Cfg.PATH_SEPARATOR;
 
+	// private NameNode hdfsnn;
+
 	private String txnPrefix = Cfg.TXN_FILE_PREFIX;
 
 	private int txnCount = 0;
@@ -38,6 +42,7 @@ public class CoordinatorOps {
 
 	volatile String curTxnFile = new String();
 	volatile String createPath = new String();
+	private String txnOps = new String();
 	// volatile String watcherPath = new String();
 
 	private volatile TxnState state;
@@ -69,27 +74,17 @@ public class CoordinatorOps {
 		}
 	}
 
-	public void doTxn(String doTxnFile) {
+	public void doTxn(String doTxnFile, String ops) {
 		try {
-			// boolean equal = TxnState.DO_TXN.text.equals(new
-			// String(zk.getData(curTxnFile, false,
-			// null)).split(stateOpsSeparator)[0]);
-			// System.out.println("doTxn:" + doTxn + ", equal:" + equal);
-			// System.out.println("doTxn-->curTxnFile:" + curTxnFile + "|||len:"
-			// + curTxnFile.length());
-			// doTxnFile = getTxnFile();
-			// if (doTxn
-			// || (TxnState.DO_TXN.text
-			// .equals(new String(zk.getData(doTxnFile, false,
-			// null)).split(stateOpsSeparator)[0]))) {
 			Cfg.killTime("Coordinator", "DoingTxn", false);
 			System.out.println("Begin to do transaction....");
-			TimeUnit.MILLISECONDS.sleep(5000);
+			// TimeUnit.MILLISECONDS.sleep(5000);
 			System.out.println("ops:" + ops);
+			doTxnOperations(ops, zk, doTxnFile);
 			System.out.println("Transacation " + doTxnFile + " has finished!");
 			if (zk.exists(doTxnFile, false) != null) {
-				ops = new String(zk.getData(doTxnFile, false, null))
-						.split(stateOpsSeparator)[1];
+				// ops = new String(zk.getData(doTxnFile, false, null))
+				// .split(stateOpsSeparator)[1];
 				byte[] data = (TxnState.RELEASE_LOCK.text + stateOpsSeparator + ops)
 						.getBytes();
 				while (zk.setData(doTxnFile, data, -1) == null)
@@ -101,6 +96,33 @@ public class CoordinatorOps {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	public boolean doTxnOperations(String ops, ZooKeeper zk, String doTxnFile) {
+		boolean done = false;
+		// String nnAddress = getNNAddress();
+		// 001DEL$src1$src2
+		//System.out.println("subString:"
+		//		+ ops.substring(Cfg.TXN_FLAG.length(), ops.length()));
+		//String tmp = ops.substring(Cfg.TXN_FLAG.length(), ops.length());
+		String array[] = ops.split(Cfg.OPS_PARAMETER_SEPARATOR);
+		for (int i = 0; i < array.length; i++) {
+			System.out.println("len:" + array.length + ", array:" + array[i]);
+		}switch (array[0].trim().toLowerCase()
+				.split(Cfg.OPS_PARAMETER_SEPARATOR)[0]) {
+		case "del":
+			System.out.println("Begin Delete...");
+			done = co.doDelete(array);
+			System.out.println("Delete has done!");
+			break;
+		case "mv":
+			System.out.println("Begin Rename...");
+			done = co.doRename(array, zk, doTxnFile);
+			System.out.println("Rename has done!");
+			break;
+		}
+
+		return done;
 	}
 
 	public Runnable coordinatorWatcherDaemon = new Runnable() {
@@ -131,7 +153,7 @@ public class CoordinatorOps {
 											+ state + ", ops:" + ops
 											+ ", nnCount:" + nnCount
 											+ ", wait for 3s......");
-									TimeUnit.MILLISECONDS.sleep(3000);
+									// TimeUnit.MILLISECONDS.sleep(3000);
 									switch (state) {
 									case PREPARE_LOCK:
 										if (zk.getChildren(curTxnFile, wh)
@@ -143,8 +165,8 @@ public class CoordinatorOps {
 											byte[] data = (TxnState.DO_TXN.text
 													+ stateOpsSeparator + ops)
 													.getBytes();
-											Cfg.killTime("Coordinator",
-													"BeforeDoTxn", true);
+											// Cfg.killTime("Coordinator","BeforeDoTxn",
+											// true);
 											zk.setData(curTxnFile, data, -1);
 											// allReplyFileCreated = true;
 											doTxn = true;
@@ -295,6 +317,7 @@ public class CoordinatorOps {
 
 	public String getDoTxnFile() {
 		String state;
+		String[] tmp = new String[2];
 		synchronized (mutex) {
 			List<String> list;
 			try {
@@ -302,8 +325,10 @@ public class CoordinatorOps {
 				if (list.size() > 0) {
 					String min = Collections.min(list);
 					curTxnFile = root + pathSeparator + min;
-					state = new String(zk.getData(curTxnFile, false, null))
-							.split(stateOpsSeparator)[0];
+					tmp = new String(zk.getData(curTxnFile, false, null))
+							.split(stateOpsSeparator);
+					state = tmp[0];
+					txnOps = tmp[1];
 					if (TxnState.DO_TXN.text.equals(state)) {
 						return curTxnFile;
 					} else if (TxnState.RELEASE_LOCK.text.equals(state)) {
@@ -319,6 +344,10 @@ public class CoordinatorOps {
 			}
 			return null;
 		}
+	}
+
+	public String getTxnOps() {
+		return txnOps;
 	}
 
 	public String getCurTxnFile() {
@@ -374,9 +403,10 @@ public class CoordinatorOps {
 			while (true) {
 				// System.out.println("doTxnDaemon-->curTxnFIle:" +curTxnFile);
 				String doTxnFile = getDoTxnFile();
+				String txnOps = getTxnOps();
 				if (doTxnFile != null && (doTxnFile.length() > 0)) {
-					Cfg.killTime("Coordinator", "doTxn", true);
-					doTxn(doTxnFile);
+					// Cfg.killTime("Coordinator", "doTxn", true);
+					doTxn(doTxnFile, txnOps);
 				} else {
 					try {
 						TimeUnit.MILLISECONDS.sleep(1000);
@@ -389,4 +419,41 @@ public class CoordinatorOps {
 		}
 
 	};
+
+	public void sendTxnToNN(String nnAddress, String ops) {
+		Socket socket;
+		byte[] data = ops.getBytes();
+
+		// int servPort = 2281;
+		try {
+			socket = new Socket(nnAddress, Cfg.servPort);
+			System.out.println("Send Txn to NN... ");
+			// switch (str) {
+			// case "mv":
+			InputStream in = socket.getInputStream();
+			OutputStream out = socket.getOutputStream();
+
+			out.write(data);
+
+			int totalBytesRcvd = 0;
+			int bytesRcvd;
+
+			while (totalBytesRcvd < data.length) {
+				if ((bytesRcvd = in.read(data, totalBytesRcvd, data.length
+						- totalBytesRcvd)) == -1) {
+					throw new SocketException("Connection closed prematurely");
+				}
+				totalBytesRcvd += bytesRcvd;
+			}
+			System.out.println("Coordinator: send end!");
+			socket.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public String getNNAddress() {
+		return Cfg.NNAddress;
+	}
 }

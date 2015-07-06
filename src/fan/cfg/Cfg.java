@@ -3,12 +3,20 @@ package fan.cfg;
 import java.util.concurrent.TimeUnit;
 
 public class Cfg {
+	
+	public static final String DELETE = "del";
+	public static final String RENAME = "mv";
+	public static final String SRC = "/rename";
+	public static final String DST = "/dir";
+	
 	public static final String zkHost = "172.16.253.178";// the zk server
 
 	public static final String server = "172.16.253.178";// the namenode ip
 	public static final int servPort = 2281;
 
 	public static final String coordinator = "172.16.253.178";
+	
+	public static final String NNAddress = "172.16.253.178";
 
 	public static final int BUFSIZE = 32;
 
@@ -18,7 +26,10 @@ public class Cfg {
 	public static final String PATH_SEPARATOR = "/";
 
 	public static final String STATE_OPS_SEPARATOR = "#";
-
+	public static final String TXN_FLAG = "001";		// 001delete*src1$src2$
+	public static final String OPS_PARAMETER_SEPARATOR = "@"; //mv src1$src2$...$dst
+	public static final String OPS_SUBSTATE_SEPARATOR = "~";
+	
 	public static final String nnId = "1";
 	public static final String REPLY_PREFIX = "reply_";
 
